@@ -1,1 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rviz>
+  <display name="Robot Model" type="rviz2/RobotModel">
+    <property name="Robot Description" value="$(find robot_control)/urdf/robot.urdf"/>
+  </display>
+  <display name="Laser Scan" type="rviz2/LaserScan">
+    <topic>/scan</topic>
+    <color_scheme>intensity</color_scheme>
+  </display>
+</rviz>
 
