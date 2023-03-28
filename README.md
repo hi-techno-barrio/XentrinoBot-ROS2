@@ -41,3 +41,28 @@ odometer.cpp: This file contains the code for the node that reads data from the 
 lidar.cpp: This file contains the code for the node that reads data from the Lidar.
 robot_control.cpp: This file contains the code for the main node that integrates data from the other nodes and controls the robot.
 include: This directory contains header files for the source code
+
+
+
+.
+├── CMakeLists.txt
+├── launch
+│   ├── robot_description.launch.py
+│   ├── motor_controller.launch.py
+│   ├── imu.launch.py
+│   ├── odometer.launch.py
+│   ├── lidar.launch.py
+│   └── robot_control.launch.py
+├── package.xml
+├── src
+│   ├── motor_controller.cpp
+│   ├── imu.cpp
+│   ├── odometer.cpp
+│   ├── lidar.cpp
+│   └── robot_control.cpp
+└── include
+    ├── motor_controller.hpp
+    ├── imu.hpp
+    ├── odometer.hpp
+    ├── lidar.hpp
+    └── robot_control.hpp
