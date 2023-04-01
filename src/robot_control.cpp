@@ -119,14 +119,26 @@ private:
   
   geometry_msgs::msg::Twist vel_msg_;
 
-  void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg)
-  {
-    // Update robot control based on joystick message
-    vel_msg_.linear.x = msg->axes[1] * 0.2; // Limit max linear velocity to 0.2 m/s
-    vel_msg_.angular.z = msg->axes[0] * 1.0; // Limit max angular velocity to 1.0 rad/s
-    // Publish velocity command
-    vel_pub_->publish(vel_msg_);
+ void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
+{
+  // Example control logic: Move the robot arm to a certain position
+  constexpr size_t JOINT_ARM_INDEX = 2; // Index of the joint controlling the arm
+  constexpr float TARGET_ARM_POSITION = 1.0; // Target position for the arm joint in radians
+  constexpr float JOINT_SPEED = 0.1; // Joint speed in radians per second
+
+  if (msg->position.size() > JOINT_ARM_INDEX) {
+    float current_position = msg->position[JOINT_ARM_INDEX];
+    if (std::abs(current_position - TARGET_ARM_POSITION) > 0.1) {
+      // Move the arm joint towards the target position
+      float direction = (TARGET_ARM_POSITION > current_position) ? 1.0 : -1.0;
+      float delta_position = direction * JOINT_SPEED * 0.1; // 0.1 is the time step in seconds
+      vel_msg_.position[JOINT_ARM_INDEX] = current_position + delta_position;
+      // Publish joint position command
+      vel_pub_->publish(vel_msg_);
+    }
   }
+}
+
   
 void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
 {
