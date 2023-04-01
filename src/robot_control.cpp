@@ -49,11 +49,7 @@ private:
   rclcpp::Subscription<sensor_msgs::msg::Odometry>::SharedPtr odom_sub_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
   
-  void jointStateCallback(const sensor_msgs::msg::JointState::SharedPtr msg)
-  {
-    // Update robot control based on joint state message
-    // ...
-  }
+
   
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
   {
