@@ -128,17 +128,25 @@ private:
     vel_pub_->publish(vel_msg_);
   }
   
-  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
-  {
-    // Update robot control based on IMU message
-    // ...
+void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
+{
+  // Example control logic: Stop the robot if it tilts too much
+  constexpr float tilt_threshold = 0.5; // radians
+  if (std::abs(msg->linear_acceleration.x) > tilt_threshold ||
+      std::abs(msg->linear_acceleration.y) > tilt_threshold) {
+    stopRobot();
   }
+}
 
-  void odomCallback(const sensor_msgs::msg::Odometry::SharedPtr msg)
-  {
-    // Update robot control based on odometry message
-    // ...
+void odomCallback(const sensor_msgs::msg::Odometry::SharedPtr msg)
+{
+  // Example control logic: Move the robot to a random position
+  if (!moving_) {
+    target_position_ = 10.0 * static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX) - 5.0; // Random position within [-5, 5] meters
   }
+  current_position_ = msg->pose.pose.position.x;
+}
+
 
   void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
   {
