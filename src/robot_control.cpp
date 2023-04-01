@@ -57,31 +57,159 @@ private:
   
   void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
   {
+    // Update robot control #include "rclcpp/rclcpp.hpp"
+#include "geometry_msgs/msg/twist.hpp"
+#include "sensor_msgs/msg/joy.hpp"
+#include "sensor_msgs/msg/imu.hpp"
+#include "sensor_msgs/msg/odometry.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+
+class RobotControl : public rclcpp::Node
+{
+public:
+  RobotControl()
+  : Node("robot_control")
+  {
+    // Create subscriber for joystick data
+    joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
+      "joy",
+      10,
+      std::bind(&RobotControl::joyCallback, this, std::placeholders::_1)
+    );
+    
+    // Create subscriber for IMU data
+    imu_sub_ = this->create_subscription<sensor_msgs::msg::Imu>(
+      "imu",
+      10,
+      std::bind(&RobotControl::imuCallback, this, std::placeholders::_1)
+    );
+    
+    // Create subscriber for odometry data
+    odom_sub_ = this->create_subscription<sensor_msgs::msg::Odometry>(
+      "odom",
+      10,
+      std::bind(&RobotControl::odomCallback, this, std::placeholders::_1)
+    );
+    
+    // Create subscriber for LaserScan data
+    laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+      "scan",
+      10,
+      std::bind(&RobotControl::laserCallback, this, std::placeholders::_1)
+    );
+    
+    // Create publisher for velocity commands
+    vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+    
+    // Initialize robot control
+    vel_msg_.linear.x = 0.0;
+    vel_msg_.linear.y = 0.0;
+    vel_msg_.linear.z = 0.0;
+    vel_msg_.angular.x = 0.0;
+    vel_msg_.angular.y = 0.0;
+    vel_msg_.angular.z = 0.0;
+  }
+
+private:
+  rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr imu_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
+  
+  geometry_msgs::msg::Twist vel_msg_;
+
+  void joyCallback(const sensor_msgs::msg::Joy::SharedPtr msg)
+  {
+    // Update robot control based on joystick message
+    vel_msg_.linear.x = msg->axes[1] * 0.2; // Limit max linear velocity to 0.2 m/s
+    vel_msg_.angular.z = msg->axes[0] * 1.0; // Limit max angular velocity to 1.0 rad/s
+    // Publish velocity command
+    vel_pub_->publish(vel_msg_);
+  }
+  
+  void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg)
+  {
     // Update robot control based on IMU message
     // ...
- }
+  }
 
-void odomCallback(const sensor_msgs::msg::Odometry::SharedPtr msg)
-{
-// Update robot control based on odometry message
-// ...
+  void odomCallback(const sensor_msgs::msg::Odometry::SharedPtr msg)
+  {
+    // Update robot control based on odometry message
+    // ...
+  }
+
+  void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
+  {
+    // Example control logic: Stop the robot if an obstacle is
+// detected within a certain distance threshold
+constexpr float obstacle_distance_threshold = 0.5; // meters
+for (float range : msg->ranges) {
+  if (range < obstacle_distance_threshold) {
+    stopRobot();
+    break;
+  }
+}
 }
 
-void laserCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
-{
-// Update robot control based on LaserScan message
-// ...
+// Example function for starting the robot
+void startRobot() {
+vel_msg_.linear.x = 0.1; // Move forward at 0.1 m/s
+vel_pub_->publish(vel_msg_);
+moving_ = true;
 }
+
+// Example function for stopping the robot
+void stopRobot() {
+vel_msg_.linear.x = 0.0;
+vel_msg_.angular.z = 0.0;
+vel_pub_->publish(vel_msg_);
+moving_ = false;
+}
+
+// Example function for controlling the robot based on sensor data
+void controlRobot() {
+// Check if there is an obstacle detected
+if (obstacle_detected_) {
+stopRobot();
+obstacle_detected_ = false;
+}// Check if the robot is not moving and start it
+if (!moving_) {
+  startRobot();
+}
+
+// Check if the robot has reached the target position
+if (std::abs(current_position_ - target_position_) < 0.1) {
+  stopRobot();
+}
+
+// Move the robot towards the target position
+if (moving_) {
+  if (target_position_ > current_position_) {
+    // Move the robot forward
+    vel_msg_.linear.x = 0.1; // Move forward at 0.1 m/s
+  } else {
+    // Move the robot backward
+    vel_msg_.linear.x = -0.1; // Move backward at 0.1 m/s
+  }
+  vel_pub_->publish(vel_msg_);
+}
+}
+
+rclcpp::TimerBase::SharedPtr control_timer_;
+float current_position_ = 0.0;
+float target_position_ = 1.0;
+bool moving_ = false;
+bool obstacle_detected_ = false;
 };
 
 int main(int argc, char **argv)
 {
 rclcpp::init(argc, argv);
 auto node = std::make_shared<RobotControl>();
+node->control_timer_ = node->create_wall_timer(std::chrono::milliseconds(10), std::bind(&RobotControl::controlRobot, node));
 rclcpp::spin(node);
 rclcpp::shutdown();
 return 0;
 }
-
-
-
