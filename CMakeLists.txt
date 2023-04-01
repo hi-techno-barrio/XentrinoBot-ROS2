@@ -5,9 +5,25 @@ project(robot_control)
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(urdf REQUIRED)
+find_package(xacro REQUIRED)
 
 # Add include directories
 include_directories(include)
+
+# Generate URDF from Xacro
+set(urdf_file ${PROJECT_SOURCE_DIR}/urdf/robot.urdf)
+set(xacro_file ${PROJECT_SOURCE_DIR}/urdf/robot.xacro)
+set(generate_urdf_cmd "${PYTHON_EXECUTABLE} ${xacro_EXECUTABLE} ${xacro_file} -o ${urdf_file}")
+execute_process(
+  COMMAND ${generate_urdf_cmd}
+)
+
+# Install URDF file
+install(
+  FILES ${urdf_file}
+  DESTINATION share/${PROJECT_NAME}/urdf
+)
 
 # Create executable for motor_controller node
 add_executable(motor_controller
@@ -37,7 +53,7 @@ ament_target_dependencies(lidar rclcpp sensor_msgs)
 add_executable(robot_control
   src/robot_control.cpp
 )
-ament_target_dependencies(robot_control rclcpp sensor_msgs)
+ament_target_dependencies(robot_control rclcpp sensor_msgs urdf)
 
 # Install executables
 install(TARGETS
@@ -52,6 +68,12 @@ install(TARGETS
 # Install launch files
 install(DIRECTORY
   launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+# Install RViz files
+install(DIRECTORY
+  rviz
   DESTINATION share/${PROJECT_NAME}/
 )
 
